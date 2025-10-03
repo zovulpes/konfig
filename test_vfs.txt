@@ -1,0 +1,9 @@
+pwd
+ls
+cd /a
+ls
+cd b/c
+ls
+cd /projects/python/scripts
+ls
+cd /nonexistent
