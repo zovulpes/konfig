@@ -1,0 +1,7 @@
+path,type,content
+/,dir,
+/docs,dir,
+/docs/notes.txt,file,SGVsbG8gZnJvbSBub3RlcyE=
+/docs/secret.txt,file,VG9wIHNlY3JldCE=
+/empty.txt,file,
+/README.md,file,IyBNeSBWRlMKVGVzdCBmb3Igc3RhZ2UgNC4=
