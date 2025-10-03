@@ -1,0 +1,8 @@
+ls
+touch /newfile.txt
+ls
+touch /docs/new_note.txt
+ls /docs
+touch /nonexistent_dir/file.txt
+touch
+exit
