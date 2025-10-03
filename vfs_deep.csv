@@ -1,0 +1,10 @@
+path,type,content
+/,dir,
+/a,dir,
+/a/b,dir,
+/a/b/c,dir,
+/a/b/c/d.txt,file,dGVzdF9jb250ZW50Cg==
+/projects,dir,
+/projects/python,dir,
+/projects/python/scripts,dir,
+/projects/python/scripts/main.py,file,cHJpbnQoIkhlbGxvLCB2ZnMhIikK

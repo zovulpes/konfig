@@ -1,0 +1,9 @@
+path,type,content
+/,dir,
+/home,dir,
+/home/user,dir,
+/home/user/note.txt,file,SGVsbG8sIFZGUyE=
+/etc,dir,
+/etc/hosts,file,MTI3LjAuMC4xCWxvY2FsaG9zdAo=
+/bin,dir,
+/bin/ls,file,
