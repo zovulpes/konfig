@@ -1,8 +1,17 @@
+# === Тест корректных команд ===
+ls
+cd /home
+ls
+cd user
+ls
+
+# === Тест глубокой структуры ===
+cd /
 ls
 cd /a
 ls
 cd b/c
 ls
-cd /projects/python/scripts
-ls
-cd /nonexistent
+
+# === Тест ошибок (должен остановиться здесь) ===
+cd /nonexistent_directory
