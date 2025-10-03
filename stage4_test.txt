@@ -1,0 +1,7 @@
+ls
+cd /docs
+ls
+cat notes.txt
+cat nonexistent.txt
+date
+cd /invalid
