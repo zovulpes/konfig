@@ -5,6 +5,7 @@ import sys     # для доступа к аргументам командно�
 import csv     # для чтения CSV-файла с VFS
 import base64  # для декодирования содержимого файлов из base64
 from pathlib import PurePosixPath  # для безопасной работы с путями (без доступа к диску)
+import datetime  # для команды date
 
 hostname = socket.gethostname()
 username = getpass.getuser()
@@ -190,6 +191,59 @@ def cmd_ls(args):
     if contents:
         print('\n'.join(contents))
 
+def cmd_cat(args):
+    """Команда cat: выводит содержимое файла из VFS"""
+    if not args:
+        print("cat: отсутствует операнд")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    target = args[0]
+    try:
+        abs_path = resolve_path(target)
+    except Exception:
+        print(f"cat: ошибка в пути: {target}")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    if abs_path not in vfs:
+        print(f"cat: нет такого файла или директории: {target}")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    if vfs[abs_path]['type'] != 'file':
+        print(f"cat: {target}: это директория")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    content = vfs[abs_path]['content']
+    if content is not None:
+        # Пытаемся декодировать как UTF-8; если не получится — выводим как есть (или пропускаем)
+        try:
+            print(content.decode('utf-8'), end='')
+        except UnicodeDecodeError:
+            # В учебных целях можно вывести как hex или просто пропустить
+            # Но по заданию — выводим содержимое. Допустим, файлы текстовые.
+            print(content.decode('utf-8', errors='replace'), end='')
+
+def cmd_date(args):
+    """Команда date: выводит текущую дату и время в формате, похожем на системный"""
+    # Пример: Thu Jun  5 12:34:56 MSK 2025
+    # Python не даёт напрямую "MSK", но можно использовать tzname или просто локальное время
+    now = datetime.datetime.now()
+    # Форматируем вручную, чтобы было похоже на `date` в Linux
+    # %a — сокращённое имя дня, %b — сокращённое имя месяца
+    formatted = now.strftime("%a %b %d %H:%M:%S %Z %Y")
+    # Если %Z пустой (часто бывает), подставим "LOCAL"
+    if "%Z" in formatted or not formatted.split()[-2].strip():
+        # Простой fallback: убираем %Z и вставляем "LOCAL"
+        formatted = now.strftime("%a %b %d %H:%M:%S LOCAL %Y")
+    print(formatted)
+
 # === Выполнение команды (обновлённая версия) ===
 
 def execute_command(tokens):
@@ -209,6 +263,14 @@ def execute_command(tokens):
 
     elif command == "ls":
         cmd_ls(args)
+        return False
+
+    elif command == "cat":
+        cmd_cat(args)
+        return False
+
+    elif command == "date":
+        cmd_date(args)
         return False
 
     else:
@@ -298,7 +360,4 @@ else:
 
         except KeyboardInterrupt:
             print("\nВыход по Ctrl+C")
-            break
-        except EOFError:
-            print()
             break
