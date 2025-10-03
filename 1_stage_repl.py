@@ -230,6 +230,43 @@ def cmd_cat(args):
             # Но по заданию — выводим содержимое. Допустим, файлы текстовые.
             print(content.decode('utf-8', errors='replace'), end='')
 
+def cmd_touch(args):
+    """Команда touch: создаёт пустой файл в VFS, если он не существует."""
+    if not args:
+        print("touch: отсутствует операнд")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    target = args[0]
+    try:
+        abs_path = resolve_path(target)
+    except Exception:
+        print(f"touch: ошибка в пути: {target}")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    # Проверяем, что файл ещё не существует
+    if abs_path in vfs:
+        # Если уже существует — ничего не делаем (как в реальном touch)
+        return
+
+    # Определяем родительскую директорию
+    parent_path = str(PurePosixPath(abs_path).parent)
+    if parent_path == '.':
+        parent_path = '/'
+
+    # Проверяем, что родительская директория существует и это dir
+    if parent_path not in vfs or vfs[parent_path]['type'] != 'dir':
+        print(f"touch: невозможно создать '{abs_path}': Нет такого файла или каталога")
+        if script_path is not None:
+            sys.exit(1)
+        return
+
+    # Создаём пустой файл
+    vfs[abs_path] = {'type': 'file', 'content': None}
+    
 def cmd_date(args):
     """Команда date: выводит текущую дату и время в формате, похожем на системный"""
     # Пример: Thu Jun  5 12:34:56 MSK 2025
@@ -271,6 +308,10 @@ def execute_command(tokens):
 
     elif command == "date":
         cmd_date(args)
+        return False
+
+    elif command == "touch":
+        cmd_touch(args)
         return False
 
     else:
