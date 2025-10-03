@@ -1,0 +1,11 @@
+path,type,content,permissions
+/,dir,,755
+/home,dir,,755
+/home/user,dir,,755
+/home/user/documents,dir,,755
+/home/user/documents/file1.txt,file,"Hello, this is file1.",644
+/home/user/documents/file2.txt,file,"This is file2 content.",644
+/home/user/downloads,dir,,755
+/home/user/downloads/archive.zip,file,"U29tZSBiaW5hcnkgZGF0YQ==",644
+/tmp,dir,,777
+/tmp/log.txt,file,"Log started...",666
