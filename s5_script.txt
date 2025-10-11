@@ -1,0 +1,21 @@
+# === Просмотр исходной структуры ===
+ls
+cd /home/user
+ls
+
+# === Создание файлов через touch ===
+touch notes.txt
+ls
+touch /docs/todo.md
+ls /docs
+
+# === Чтение созданных файлов (они пустые) ===
+cat notes.txt
+cat /docs/todo.md
+
+# === Повторный touch (должен игнорироваться без ошибки) ===
+touch notes.txt
+ls
+
+# === Попытка создать файл в несуществующей директории (ошибка!) ===
+touch /missing/file.txt

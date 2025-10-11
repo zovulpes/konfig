@@ -1,16 +1,21 @@
 # === Тест корректных команд ===
 ls
-cd /home
+cd /projects
 ls
-cd user
+cd python
 ls
+cd scripts
+ls
+cat main.py
 
 # === Тест глубокой структуры ===
 cd /
 ls
 cd /a
 ls
-cd b/c
+cd b
+ls
+cd c
 ls
 
 # === Тест ошибок (должен остановиться здесь) ===

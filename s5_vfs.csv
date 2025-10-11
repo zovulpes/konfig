@@ -1,0 +1,7 @@
+path,type,content
+/,dir,
+/home,dir,
+/home/user,dir,
+/var,dir,
+/var/log,dir,
+/docs,dir,

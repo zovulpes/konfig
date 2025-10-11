@@ -104,17 +104,21 @@ def load_vfs(vfs_file):
 
 def normalize_path(path_str):
     """Приводит путь к каноническому виду (обрабатывает .. и .)"""
-    p = PurePosixPath(path_str) # работает с путями в стиле UNIX/Linux/macOS (то есть с / как разделителем), но не обращается к реальной файловой системе.
-    parts = []
-    for part in p.parts:
+    if not path_str.startswith('/'):
+        raise ValueError("Путь должен быть абсолютным")
+    
+    # Разбиваем на части, игнорируя пустые и корень
+    parts = [part for part in path_str.split('/') if part not in ('', '.')]
+    
+    normalized = []
+    for part in parts:
         if part == '..':
-            if parts:  # нельзя выйти выше корня
-                parts.pop()
-        elif part == '.' or part == '':
-            continue
+            if normalized:  # нельзя выйти выше корня
+                normalized.pop()
         else:
-            parts.append(part)
-    return '/' + '/'.join(parts) if parts else '/'
+            normalized.append(part)
+    
+    return '/' + '/'.join(normalized) if normalized else '/'
 
 def resolve_path(input_path):
     """Преобразует относительный или абсолютный путь в абсолютный"""
@@ -133,26 +137,27 @@ def cmd_cd(args):
     if not args:
         # cd без аргументов — переход в корень
         current_dir = "/"
-        return
+        return True
 
     target = args[0]
     try:
         abs_path = resolve_path(target)
     except Exception:
         print(f"cd: ошибка в пути: {target}")
-        return
+        return False
 
     # Проверяем существование пути
     if abs_path not in vfs:
         print(f"cd: нет такого файла или директории: {target}")
-        return
+        return False
 
     # Проверяем, что это директория
     if vfs[abs_path]['type'] != 'dir':
         print(f"cd: не является директорией: {target}")
-        return
+        return False
 
     current_dir = abs_path
+    return True
 
 def cmd_ls(args):
     """Команда ls: выводит содержимое директории из VFS"""
@@ -162,19 +167,19 @@ def cmd_ls(args):
             target_dir = resolve_path(args[0])
         except Exception:
             print(f"ls: ошибка в пути: {args[0]}")
-            return
+            return False
     else:
         target_dir = current_dir
 
     # Проверяем существование
     if target_dir not in vfs:
         print(f"ls: нет такого файла или директории: {args[0] if args else ''}")
-        return
+        return False
 
     # Проверяем, что это директория
     if vfs[target_dir]['type'] != 'dir':
         print(f"ls: не является директорией: {args[0] if args else ''}")
-        return
+        return False
 
     # Собираем прямых потомков (файлы и папки на один уровень глубже)
     contents = []
@@ -190,35 +195,29 @@ def cmd_ls(args):
     contents.sort()
     if contents:
         print('\n'.join(contents))
+    
+    return True
 
 def cmd_cat(args):
     """Команда cat: выводит содержимое файла из VFS"""
     if not args:
         print("cat: отсутствует операнд")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     target = args[0]
     try:
         abs_path = resolve_path(target)
     except Exception:
         print(f"cat: ошибка в пути: {target}")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     if abs_path not in vfs:
         print(f"cat: нет такого файла или директории: {target}")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     if vfs[abs_path]['type'] != 'file':
         print(f"cat: {target}: это директория")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     content = vfs[abs_path]['content']
     if content is not None:
@@ -226,31 +225,28 @@ def cmd_cat(args):
         try:
             print(content.decode('utf-8'), end='')
         except UnicodeDecodeError:
-            # В учебных целях можно вывести как hex или просто пропустить
-            # Но по заданию — выводим содержимое. Допустим, файлы текстовые.
+            # выводим содержимое.
             print(content.decode('utf-8', errors='replace'), end='')
+    
+    return True
 
 def cmd_touch(args):
     """Команда touch: создаёт пустой файл в VFS, если он не существует."""
     if not args:
         print("touch: отсутствует операнд")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     target = args[0]
     try:
         abs_path = resolve_path(target)
     except Exception:
         print(f"touch: ошибка в пути: {target}")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     # Проверяем, что файл ещё не существует
     if abs_path in vfs:
         # Если уже существует — ничего не делаем (как в реальном touch)
-        return
+        return True
 
     # Определяем родительскую директорию
     parent_path = str(PurePosixPath(abs_path).parent)
@@ -260,12 +256,11 @@ def cmd_touch(args):
     # Проверяем, что родительская директория существует и это dir
     if parent_path not in vfs or vfs[parent_path]['type'] != 'dir':
         print(f"touch: невозможно создать '{abs_path}': Нет такого файла или каталога")
-        if script_path is not None:
-            sys.exit(1)
-        return
+        return False
 
     # Создаём пустой файл
     vfs[abs_path] = {'type': 'file', 'content': None}
+    return True
     
 def cmd_date(args):
     """Команда date: выводит текущую дату и время в формате, похожем на системный"""
@@ -280,46 +275,44 @@ def cmd_date(args):
         # Простой fallback: убираем %Z и вставляем "LOCAL"
         formatted = now.strftime("%a %b %d %H:%M:%S LOCAL %Y")
     print(formatted)
+    return True
 
 # === Выполнение команды (обновлённая версия) ===
 
 def execute_command(tokens):
     """Выполняет одну команду. Возвращает True, если нужно завершить работу."""
     if not tokens:
-        return False
+        return False, True
 
     command = tokens[0]
     args = tokens[1:] if len(tokens) > 1 else []
 
+    success = True
+
     if command == "exit":
-        return True
+        return True, True
 
     elif command == "cd":
-        cmd_cd(args)
-        return False
+        success = cmd_cd(args)
 
     elif command == "ls":
-        cmd_ls(args)
-        return False
+        success = cmd_ls(args)
 
     elif command == "cat":
-        cmd_cat(args)
-        return False
+        success = cmd_cat(args)
 
     elif command == "date":
-        cmd_date(args)
-        return False
+        success = cmd_date(args)
 
     elif command == "touch":
-        cmd_touch(args)
-        return False
+        success = cmd_touch(args)
 
     else:
         print(f"Ошибка: команда '{command}' не найдена")
         # При выполнении скрипта — останавливаемся при первой ошибке
-        if script_path is not None:
-            sys.exit(1)
-        return False
+        success = False
+    
+    return False, success  # Не завершать работу, но вернуть статус
 
 # === Выполнение скрипта (обновлённая версия) ===
 
@@ -357,7 +350,12 @@ def run_script(script_file):
             sys.exit(1)
 
         # Выполняем команду
-        should_exit = execute_command(tokens)
+        should_exit, success = execute_command(tokens)
+
+        # ОСТАНАВЛИВАЕМСЯ ПРИ ЛЮБОЙ ОШИБКЕ
+        if not success:
+            sys.exit(1)
+
         if should_exit:
             break
 
@@ -395,7 +393,7 @@ else:
                 print(f"Ошибка синтаксиса: {e}")
                 continue
 
-            should_exit = execute_command(tokens)
+            should_exit, success = execute_command(tokens)
             if should_exit:
                 break
 
